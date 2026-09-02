@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+from detection import detecter_urgence
 
 st.set_page_config(page_title="Supervision trafic aérien", layout="wide")
 
@@ -26,6 +27,20 @@ for avion in avions:
         positions.append({"lat": latitude, "lon": longitude})
 
 st.write("Nombre d'avions positionnés dans la zone : ", len(positions))
+
+# On passe chaque avion au détecteur d'urgence
+alertes = []
+for avion in avions:
+    alerte = detecter_urgence(avion)
+    if alerte is not None:
+        alertes.append(alerte)
+
+st.subheader("Alertes en cours")
+if len(alertes) == 0:
+    st.success("Aucune urgence détectée")
+else:
+    for alerte in alertes:
+        st.error(f"{alerte['indicatif']} - {alerte['motif']} (ICAO24: {alerte['icao24']}) {alerte['squawk']}")
 
 # st.map attend un tableau de points avec des colonnes "lat" et "lon"
 st.map(positions)
