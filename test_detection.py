@@ -27,3 +27,9 @@ def test_avion_normal_pas_d_alerte():
     avion = avion_test("1000")
     alerte = detecter_urgence(avion)
     assert alerte is None
+
+
+def test_code_7000_pas_une_urgence():
+    avion = avion_test("7000")
+    alerte = detecter_urgence(avion)
+    assert alerte is None
