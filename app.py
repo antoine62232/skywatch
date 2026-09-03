@@ -6,20 +6,23 @@ from streamlit_autorefresh import st_autorefresh
 from opensky import recuperer_avions
 
 st.set_page_config(page_title="Supervision trafic aérien", layout="wide")
-# Rafraîchissement automatique toutes les 30 secondes
-st_autorefresh(interval=30000, key="refresh")
+# Rafraîchissement automatique toutes les 60 secondes
+st_autorefresh(interval=60000, key="refresh")
 
 st.title("Console de supervision du trafic aérien en temps réel")
 
 # Zone surveillée : la France, en coordonnées (min/max latitude et longitude)
 ZONE_FRANCE = {"lamin": 41.0, "lomin": -5.5, "lamax": 51.5, "lomax": 9.6}
 
-# Identifiants OpenSky pour l'authentification
-client_id = st.secrets.get("OPENSKY_CLIENT_ID")
-client_secret = st.secrets.get("OPENSKY_CLIENT_SECRET")
-
-donnees = recuperer_avions(ZONE_FRANCE, client_id, client_secret)
-avions = donnees["states"]
+# Récupération des avions, en accès anonyme, avec gestion des pannes réseau
+try:
+    donnees = recuperer_avions(ZONE_FRANCE)
+    avions = donnees["states"]
+    if avions is None:
+        avions = []
+except Exception:
+    st.error("Impossible de récupérer les données OpenSky pour le moment. Réessayez dans un instant.")
+    st.stop()
 
 # Construction d'une liste propre : une entrée par avion, avec sa position
 # Couleurs RVB selon l'état de l'avion
