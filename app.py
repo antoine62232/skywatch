@@ -3,6 +3,7 @@ import requests
 import pydeck as pdk
 from detection import detecter_urgence, detecter_descente_rapide, detecter_pertes_signal, CODES_URGENCE
 from streamlit_autorefresh import st_autorefresh
+from opensky import recuperer_avions
 
 st.set_page_config(page_title="Supervision trafic aérien", layout="wide")
 # Rafraîchissement automatique toutes les 30 secondes
@@ -13,12 +14,11 @@ st.title("Console de supervision du trafic aérien en temps réel")
 # Zone surveillée : la France, en coordonnées (min/max latitude et longitude)
 ZONE_FRANCE = {"lamin": 41.0, "lomin": -5.5, "lamax": 51.5, "lomax": 9.6}
 
-# URL de l'API OpenSky qui renvoie tous les avions d'une zone géographique
-URL = "https://opensky-network.org/api/states/all"
+# Identifiants OpenSky pour l'authentification
+client_id = st.secrets.get("OPENSKY_CLIENT_ID")
+client_secret = st.secrets.get("OPENSKY_CLIENT_SECRET")
 
-reponse = requests.get(URL, params=ZONE_FRANCE, timeout=15)
-donnees = reponse.json()
-
+donnees = recuperer_avions(ZONE_FRANCE, client_id, client_secret)
 avions = donnees["states"]
 
 # Construction d'une liste propre : une entrée par avion, avec sa position
