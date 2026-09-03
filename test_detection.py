@@ -1,4 +1,4 @@
-from detection import detecter_urgence, detecter_descente_rapide
+from detection import detecter_urgence, detecter_descente_rapide, detecter_pertes_signal
 
 def avion_test(squawk=None, taux_vertical=None):
     """Fabrique un faux avion minimal avec le squawk voulu.
@@ -52,3 +52,25 @@ def test_descente_lente_pas_d_alerte():
     avion = avion_test(taux_vertical=-5.0)
     alerte = detecter_descente_rapide(avion)
     assert alerte is None
+
+
+def test_perte_signal_detectee():
+    avion_a = avion_test()
+    avion_a[0] = "AAA111"
+    avion_b = avion_test()
+    avion_b[0] = "BBB222"
+    # avant : deux avions. maintenant : seul BBB222 reste
+    avant = [avion_a, avion_b]
+    maintenant = [avion_b]
+    pertes = detecter_pertes_signal(avant, maintenant)
+    assert len(pertes) == 1
+    assert pertes[0]["icao24"] == "AAA111"
+
+
+def test_aucune_perte_si_tout_present():
+    avion_a = avion_test()
+    avion_a[0] = "AAA111"
+    avant = [avion_a]
+    maintenant = [avion_a]
+    pertes = detecter_pertes_signal(avant, maintenant)
+    assert len(pertes) == 0

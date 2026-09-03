@@ -34,3 +34,22 @@ def detecter_descente_rapide(avion):
             "taux_vertical": taux_vertical,
         }
     return None
+
+
+def detecter_pertes_signal(avions_avant, avions_maintenant):
+    """Compare deux relevés et renvoie la liste des avions disparus.
+    Un avion est considéré perdu s'il était présent avant et absent maintenant."""
+    # On récupère les identifiants présents à chaque tour
+    ids_avant = {avion[0] for avion in avions_avant}
+    ids_maintenant = {avion[0] for avion in avions_maintenant}
+
+    alertes = []
+    for avion in avions_avant:
+        icao24 = avion[0]
+        if icao24 not in ids_maintenant:
+            alertes.append({
+                "icao24": icao24,
+                "indicatif": avion[1],
+                "motif": "Perte de signal",
+            })
+    return alertes
