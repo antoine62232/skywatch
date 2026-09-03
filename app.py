@@ -1,8 +1,11 @@
 import streamlit as st
 import requests
-from detection import detecter_urgence, detecter_descente_rapide
+from detection import detecter_urgence, detecter_descente_rapide, detecter_pertes_signal
+from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(page_title="Supervision trafic aérien", layout="wide")
+# Rafraîchissement automatique toutes les 30 secondes
+st_autorefresh(interval=30000, key="refresh")
 
 st.title("Console de supervision du trafic aérien en temps réel")
 
@@ -38,6 +41,15 @@ for avion in avions:
     alerte_descente = detecter_descente_rapide(avion)
     if alerte_descente is not None:
         alertes.append(alerte_descente)
+
+# On compare le relevé actuel à celui du tour précédent, gardé en mémoire
+avions_avant = st.session_state.get("avions_precedents", [])
+pertes = detecter_pertes_signal(avions_avant, avions)
+for perte in pertes:
+    alertes.append(perte)
+
+# On mémorise le relevé actuel pour le prochain rafraîchissement
+st.session_state["avions_precedents"] = avions
 
 st.subheader("Alertes en cours")
 if len(alertes) == 0:
