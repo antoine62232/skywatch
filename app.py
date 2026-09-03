@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import pydeck as pdk
 from detection import detecter_urgence, detecter_descente_rapide, detecter_pertes_signal
 from streamlit_autorefresh import st_autorefresh
 
@@ -21,15 +22,32 @@ donnees = reponse.json()
 avions = donnees["states"]
 
 # Construction d'une liste propre : une entrée par avion, avec sa position
-positions = []
+# Couleurs RVB selon l'état de l'avion
+COULEUR_NORMAL = [40, 180, 99] # vert
+COULEUR_DESCENTE = [230, 150, 30] # orange
+COULEUR_URGENCE = [220, 40, 40] # rouge
+
+points = []
 for avion in avions:
     longitude = avion[5]
     latitude = avion[6]
-    # Certains avions n'envoient pas leur position, on les ignore
-    if latitude is not None and longitude is not None:
-        positions.append({"lat": latitude, "lon": longitude})
+    if latitude is None or longitude is None:
+        continue  # pas de position, on passe au suivant
 
-st.write("Nombre d'avions positionnés dans la zone : ", len(positions))
+    # Par défaut l'avion est normal, donc vert
+    couleur = COULEUR_NORMAL
+    if detecter_descente_rapide(avion) is not None:
+        couleur = COULEUR_DESCENTE
+    if detecter_urgence(avion) is not None:
+        couleur = COULEUR_URGENCE
+
+    points.append({
+        "lat": latitude,
+        "lon": longitude,
+        "couleur": couleur,
+    })
+
+st.write("Nombre d'avions positionnés dans la zone : ", len(points))
 
 # On passe chaque avion au détecteur d'urgence
 alertes = []
@@ -57,5 +75,17 @@ if len(alertes) == 0:
 else:
     for alerte in alertes:
         st.error(f"{alerte['indicatif']} — {alerte['motif']}")
-# st.map attend un tableau de points avec des colonnes "lat" et "lon"
-st.map(positions)
+
+# Carte centrée sur la France
+vue = pdk.ViewState(latitude=46.6, longitude=2.5, zoom=4.5)
+
+# Une couche de points, colorés selon l'état de chaque avion
+couche = pdk.Layer(
+    "ScatterplotLayer",
+    data=points,
+    get_position=["lon", "lat"],
+    get_fill_color="couleur",
+    get_radius=10000,
+)
+
+st.pydeck_chart(pdk.Deck(layers=[couche], initial_view_state=vue))
