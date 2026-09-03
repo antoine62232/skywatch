@@ -1,5 +1,6 @@
 import time
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 # Adresses officielles d'OpenSky
 TOKEN_URL = "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token"
@@ -25,7 +26,7 @@ def _obtenir_token(client_id, client_secret):
             "client_id": client_id,
             "client_secret": client_secret,
         },
-        timeout=15,
+        timeout=40,
     )
     reponse.raise_for_status()
     donnees = reponse.json()
@@ -42,6 +43,9 @@ def recuperer_avions(zone, client_id=None, client_secret=None):
         token = _obtenir_token(client_id, client_secret)
         entetes["Authorization"] = f"Bearer {token}"
 
-    reponse = requests.get(STATES_URL, params=zone, headers=entetes, timeout=15)
+    session = requests.Session()
+    retries = Retry(total=3, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504])
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    reponse = session.get(STATES_URL, params=zone, headers=entetes, timeout=40)
     reponse.raise_for_status()
     return reponse.json()
