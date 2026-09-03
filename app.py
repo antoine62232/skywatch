@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import pydeck as pdk
-from detection import detecter_urgence, detecter_descente_rapide, detecter_pertes_signal
+from detection import detecter_urgence, detecter_descente_rapide, detecter_pertes_signal, CODES_URGENCE
 from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(page_title="Supervision trafic aérien", layout="wide")
@@ -70,11 +70,20 @@ for perte in pertes:
 st.session_state["avions_precedents"] = avions
 
 st.subheader("Alertes en cours")
+
 if len(alertes) == 0:
-    st.success("Aucune urgence détectée")
+    st.success("Aucune anomalie détectée pour le moment.")
 else:
+    st.write(f"{len(alertes)} alerte(s) en cours")
     for alerte in alertes:
-        st.error(f"{alerte['indicatif']} — {alerte['motif']}")
+        motif = alerte["motif"]
+        indicatif = alerte["indicatif"]
+        if motif in CODES_URGENCE.values():
+            st.error(f"🔴 {indicatif} — {motif}")
+        elif motif == "Descente rapide":
+            st.warning(f"🟠 {indicatif} — {motif}")
+        else:
+            st.info(f"🟣 {indicatif} — {motif}")
 
 # Carte centrée sur la France
 vue = pdk.ViewState(latitude=46.6, longitude=2.5, zoom=4.5)
