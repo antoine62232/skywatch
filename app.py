@@ -20,9 +20,8 @@ try:
     avions = donnees["states"]
     if avions is None:
         avions = []
-except Exception as e:
-    st.error("Impossible de récupérer les données OpenSky pour le moment.")
-    st.exception(e)
+except Exception:
+    st.error("Impossible de récupérer les données OpenSky pour le moment.Réessayez plus tard.")
     st.stop()
 
 # Construction d'une liste propre : une entrée par avion, avec sa position
